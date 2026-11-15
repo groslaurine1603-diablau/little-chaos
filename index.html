@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#100f18">
+<title>Little Chaos — Prototype</title>
+<style>
+:root{--bg:#100f18;--panel:#24232e;--purple:#7d36ff;--pink:#ff3fba;--cyan:#45f3e8;--green:#a7ff5a;--text:#f4f1ff}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;touch-action:none}
+#game{display:block;width:100vw;height:100dvh;background:#100f18}
+.hud{position:fixed;inset:0;pointer-events:none;padding:12px;display:flex;flex-direction:column;justify-content:space-between}
+.top{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.pill{background:#171620dc;border:1px solid #51446f;border-radius:12px;padding:8px 11px;box-shadow:0 0 18px #7d36ff18;backdrop-filter:blur(6px);font-size:12px}
+.brand{font-weight:900;letter-spacing:1.5px;font-size:13px}.muted{color:#b5aecb}.bar{height:7px;background:#373241;border-radius:99px;overflow:hidden;margin-top:5px}.fill{height:100%;width:100%;background:linear-gradient(90deg,var(--purple),var(--pink));transition:width .15s}
+#xpbar{position:fixed;left:12px;right:12px;top:68px;height:5px;background:#34303e;border-radius:99px;overflow:hidden;pointer-events:none}#xpfill{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--purple))}
+.bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.tip{max-width:55%;font-size:11px;color:#c6bfd8;text-shadow:0 2px 6px #000}
+#joystick{pointer-events:auto;display:none;width:112px;height:112px;border-radius:50%;background:#24202e99;border:1px solid #9a75d966;position:relative;touch-action:none;box-shadow:inset 0 0 22px #7d36ff18}
+#stick{position:absolute;width:42px;height:42px;left:34px;top:34px;border-radius:50%;background:linear-gradient(135deg,#7d36ff,#ff3fba);box-shadow:0 0 18px #7d36ff77;border:1px solid #ffffff77}
+#actionHint{pointer-events:none;text-align:right;font-size:11px;color:#d9d1ed}
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:#090810bb;backdrop-filter:blur(8px);z-index:5}
+.card{width:min(480px,100%);max-height:90dvh;overflow:auto;background:linear-gradient(145deg,#24212f,#13121b);border:1px solid #66508c;border-radius:20px;padding:22px;box-shadow:0 20px 80px #0009,0 0 40px #7d36ff17}
+h1{margin:0 0 6px;font-size:clamp(28px,7vw,42px);letter-spacing:2px;line-height:1;color:#fff}h1 span{color:var(--pink)}h2{margin:0 0 8px;font-size:22px}p{color:#c8c0d9;line-height:1.45;font-size:14px}
+.kicker{color:var(--cyan);text-transform:uppercase;font-weight:800;letter-spacing:2px;font-size:10px;margin-bottom:12px}
+button{font:inherit;color:var(--text);cursor:pointer;border:1px solid #7857a8;background:linear-gradient(135deg,#4e2a91,#732a72);border-radius:12px;padding:12px 14px;font-weight:750;width:100%;margin-top:9px;box-shadow:0 5px 18px #0004}
+button:active{transform:scale(.985)}button.secondary{background:#24212f;border-color:#4c435d}button.green{background:linear-gradient(135deg,#255e5c,#246d7a);border-color:#45f3e8}
+.options{display:grid;grid-template-columns:1fr;gap:8px;margin-top:14px}.skill{border:1px solid #56476f;background:#1a1824;border-radius:13px;padding:12px;text-align:left}.skill strong{display:block;margin-bottom:4px}.skill small{color:#bdb3d3;font-weight:400;line-height:1.35;display:block}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.stat{padding:10px;border-radius:10px;background:#171620;border:1px solid #393047;font-size:12px}.stat b{display:block;font-size:18px;color:var(--cyan)}
+.hidden{display:none!important}.footer{font-size:10px;color:#8f879f;margin-top:14px;text-align:center}
+@media (pointer:coarse){#joystick{display:block}.tip{max-width:45%}}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="xpbar"><div id="xpfill"></div></div>
+<div class="hud">
+  <div class="top">
+    <div class="pill"><div class="brand">LITTLE <span style="color:#ff3fba">CHAOS</span></div><div id="zone" class="muted">ZONE 01 · RUINES</div></div>
+    <div class="pill" style="min-width:112px"><div>PV <b id="hptext">100 / 100</b></div><div class="bar"><div id="hpfill" class="fill"></div></div><div style="margin-top:5px">Âmes <b id="soultext">0</b> · Niv. <b id="lvtext">1</b></div></div>
+  </div>
+  <div class="bottom">
+    <div id="joystick"><div id="stick"></div></div>
+    <div class="tip">Déplace-toi, les attaques sont automatiques.<br><span style="color:#45f3e8">Récupère les fragments cyan pour évoluer.</span></div>
+    <div id="actionHint">PC : WASD / flèches<br>Échap : pause</div>
+  </div>
+</div>
+
+<div id="start" class="overlay">
+ <div class="card">
+  <div class="kicker">Prototype jouable · Build 0.1</div>
+  <h1>LITTLE <span>CHAOS</span></h1>
+  <p>Dans les ruines d’un monde où la magie a fusionné avec les machines, une petite créature traque les âmes corrompues.</p>
+  <div class="stats"><div class="stat">STYLE<b>Dark cyber fantasy</b></div><div class="stat">OBJECTIF<b>Survivre 3 vagues</b></div></div>
+  <p><b>Comment jouer :</b> déplace-toi avec WASD / les flèches sur ordinateur, ou le joystick à gauche sur téléphone. Ton arme attaque toute seule.</p>
+  <button id="startBtn">ENTRER DANS LES RUINES</button>
+  <button class="secondary" id="upgradeBtn">AMÉLIORATIONS PERMANENTES · <span id="startSouls">0</span> âmes</button>
+  <div class="footer">Prototype local — la progression est sauvegardée sur cet appareil.</div>
+ </div>
+</div>
+<div id="levelup" class="overlay hidden"><div class="card"><div class="kicker">Évolution détectée</div><h2>Choisis une mutation</h2><p>Une seule amélioration pour cette partie.</p><div id="skillOptions" class="options"></div></div></div>
+<div id="upgradePanel" class="overlay hidden"><div class="card"><div class="kicker">Forge des âmes</div><h2>Améliorations permanentes</h2><p>Les âmes récoltées pendant les parties permettent de renforcer ton prochain cycle.</p><div id="permaOptions" class="options"></div><button class="secondary" id="closeUpgrade">RETOUR</button></div></div>
+<div id="end" class="overlay hidden"><div class="card"><div class="kicker" id="endKicker">Cycle terminé</div><h2 id="endTitle">Tu as survécu</h2><p id="endText"></p><div class="stats"><div class="stat">NIVEAU ATTEINT<b id="endLevel">1</b></div><div class="stat">ÂMES GAGNÉES<b id="endSouls">0</b></div></div><button id="againBtn">RECOMMENCER</button><button class="secondary" id="endUpgradeBtn">FORGE DES ÂMES</button></div></div>
+<div id="pause" class="overlay hidden"><div class="card"><div class="kicker">Pause système</div><h2>Le chaos attend.</h2><button id="resumeBtn">REPRENDRE</button><button class="secondary" id="quitBtn">QUITTER LA PARTIE</button></div></div>
+
+<script>
+(() => {
+const canvas=document.getElementById('game'), ctx=canvas.getContext('2d');
+const $=id=>document.getElementById(id);
+let W=innerWidth,H=innerHeight,dpr=1;
+function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',resize);resize();
+const COLORS={bg:'#100f18',purple:'#7d36ff',pink:'#ff3fba',cyan:'#45f3e8',green:'#a7ff5a',white:'#f4f1ff'};
+const skillDefs=[
+ {id:'blade',name:'Lame spectrale',desc:'+30 % de dégâts. Les ennemis sentiront passer le courant.',apply:p=>p.damage*=1.3},
+ {id:'frenzy',name:'Frénésie',desc:'+22 % de vitesse d’attaque.',apply:p=>p.attackRate*=.78},
+ {id:'multishot',name:'Tir fracturé',desc:'Lance un projectile supplémentaire.',apply:p=>p.shots=Math.min(4,p.shots+1)},
+ {id:'nova',name:'Explosion d’ombre',desc:'Toutes les 7 secondes, une onde blesse les ennemis proches.',apply:p=>p.nova=true},
+ {id:'aura',name:'Aura maudite',desc:'Une aura inflige des dégâts aux ennemis au contact.',apply:p=>p.aura=true},
+ {id:'shield',name:'Bouclier spectral',desc:'+25 PV max et soigne immédiatement 25 PV.',apply:p=>{p.maxHp+=25;p.hp=Math.min(p.maxHp,p.hp+25)}},
+ {id:'ghost',name:'Familier fantôme',desc:'Un esprit tourne autour de toi et inflige des dégâts.',apply:p=>p.ghost=true},
+ {id:'absorb',name:'Absorption d’âme',desc:'+35 % d’expérience gagnée.',apply:p=>p.xpBonus*=1.35}
+];
+const upgradeDefs=[
+ {id:'damage',name:'Noyau destructeur',desc:'+12 % dégâts de départ',cost:l=>12+l*10,apply:s=>s.damageLv},
+ {id:'health',name:'Carapace renforcée',desc:'+15 PV max de départ',cost:l=>10+l*9,apply:s=>s.healthLv},
+ {id:'speed',name:'Réacteur instable',desc:'+6 % vitesse d’attaque',cost:l=>16+l*12,apply:s=>s.speedLv},
+ {id:'xp',name:'Aimant à fragments',desc:'+10 % XP gagnée',cost:l=>14+l*11,apply:s=>s.xpLv}
+];
+let saved={souls:0,damageLv:0,healthLv:0,speedLv:0,xpLv:0};
+try{saved={...saved,...JSON.parse(localStorage.getItem('lc_save')||'{}')}}catch(e){}
+function save(){try{localStorage.setItem('lc_save',JSON.stringify(saved))}catch(e){}}
+let state='menu',player,enemies=[],bullets=[],enemyBullets=[],gems=[],particles=[],keys={},last=0,spawnTimer=0,elapsed=0,kills=0,earned=0,bossSpawned=false,runId=0,joystick={x:0,y:0,active:false},pointerId=null;
+const rand=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function newPlayer(){return {x:W/2,y:H/2,r:13,hp:100+saved.healthLv*15,maxHp:100+saved.healthLv*15,speed:185,damage:17*(1+saved.damageLv*.12),attackRate:0.72*(1-saved.speedLv*.06),attackCd:0,shots:1,xp:0,xpNeed:5,level:1,xpBonus:1+saved.xpLv*.1,nova:false,novaCd:7,aura:false,ghost:false,invuln:0,skills:[]}}
+function resetRun(){runId++;player=newPlayer();enemies=[];bullets=[];enemyBullets=[];gems=[];particles=[];elapsed=0;kills=0;earned=0;spawnTimer=.8;bossSpawned=false;state='playing';hideOverlays();$('zone').textContent='ZONE 01 · RUINES';}
+function hideOverlays(){['start','levelup','upgradePanel','end','pause'].forEach(id=>$(id).classList.add('hidden'))}
+function show(id){$(id).classList.remove('hidden')}
+function startRun(){resetRun();last=performance.now()}
+function spawnEnemy(type){let side=Math.floor(Math.random()*4),x,y,pad=30;if(side===0){x=rand(0,W);y=-pad}else if(side===1){x=W+pad;y=rand(0,H)}else if(side===2){x=rand(0,W);y=H+pad}else{x=-pad;y=rand(0,H)}
+let boss=type==='boss';let e={x,y,r:boss?28:(type==='brute'?18:12),type,hp:boss?600:type==='brute'?100: type==='spectre'?38:48,maxHp:boss?600:type==='brute'?100:type==='spectre'?38:48,speed:boss?34:type==='brute'?42:type==='spectre'?48:64,damage:boss?20:type==='brute'?17: type==='spectre'?9:12,attack:rand(.3,1.2),phase:0};
+if(boss){e.hp=600;e.maxHp=600} enemies.push(e)}
+function burst(x,y,color,n=8){for(let i=0;i<n;i++)particles.push({x,y,vx:rand(-100,100),vy:rand(-100,100),life:rand(.2,.65),max:.65,color,r:rand(1.5,4)})}
+function fireAt(e){let dx=e.x-player.x,dy=e.y-player.y,d=Math.hypot(dx,dy)||1;let count=player.shots,spread=count>1?.19:0;for(let i=0;i<count;i++){let a=Math.atan2(dy,dx)+(i-(count-1)/2)*spread;bullets.push({x:player.x,y:player.y,vx:Math.cos(a)*430,vy:Math.sin(a)*430,r:4,damage:player.damage,life:1.5})}}
+function nearest(){let best=null,bd=Infinity;for(const e of enemies){let d=dist(e,player);if(d<bd){best=e;bd=d}}return best}
+function killEnemy(e){let idx=enemies.indexOf(e);if(idx<0)return;enemies.splice(idx,1);kills++;burst(e.x,e.y,e.type==='boss'?COLORS.pink:COLORS.purple,e.type==='boss'?35:10);let count=e.type==='boss'?14:e.type==='brute'?3:1;for(let i=0;i<count;i++)gems.push({x:e.x+rand(-12,12),y:e.y+rand(-12,12),r:5,xp:e.type==='boss'?5:e.type==='brute'?2:1});if(e.type==='boss'){endRun(true,'Le Gardien de l’Abîme s’est effondré. Les ruines se souviennent de ton nom.')} }
+function levelUp(){player.level++;player.xp-=player.xpNeed;player.xpNeed=Math.ceil(player.xpNeed*1.42);state='levelup';const pool=skillDefs.filter(s=>!player.skills.includes(s.id)||['blade','frenzy','multishot','shield','absorb'].includes(s.id));let picks=[];while(picks.length<3&&pool.length){let i=Math.floor(Math.random()*pool.length);picks.push(pool.splice(i,1)[0])}
+$('skillOptions').innerHTML='';picks.forEach(s=>{let b=document.createElement('button');b.className='skill';b.innerHTML='<strong>'+s.name+'</strong><small>'+s.desc+'</small>';b.onclick=()=>{s.apply(player);player.skills.push(s.id);state='playing';$('levelup').classList.add('hidden');last=performance.now()};$('skillOptions').appendChild(b)});show('levelup')}
+function endRun(win,txt){if(state==='ended')return;state='ended';earned+=Math.max(1,Math.floor(elapsed/15)+Math.floor(kills/2)+(win?20:0));saved.souls+=earned;save();$('endKicker').textContent=win?'BOSS ÉLIMINÉ':'SIGNAL PERDU';$('endTitle').textContent=win?'Victoire dans les ruines':'Le chaos t’a rattrapée';$('endText').textContent=txt+' Tu repars avec '+earned+' âmes.';$('endLevel').textContent=player.level;$('endSouls').textContent=earned;show('end')}
+function openUpgrades(){state='upgrade';renderUpgrades();show('upgradePanel')}
+function renderUpgrades(){$('startSouls').textContent=saved.souls;$('soultext').textContent=saved.souls;$('permaOptions').innerHTML='';upgradeDefs.forEach(u=>{let lvl=saved[u.id+'Lv']||0,cost=u.cost(lvl),b=document.createElement('button');b.className='skill';b.disabled=saved.souls<cost;b.style.opacity=saved.souls<cost?'.5':'1';b.innerHTML='<strong>'+u.name+' · Niv. '+lvl+'</strong><small>'+u.desc+' — Coût : '+cost+' âmes</small>';b.onclick=()=>{if(saved.souls<cost)return;saved.souls-=cost;saved[u.id+'Lv']=(saved[u.id+'Lv']||0)+1;save();renderUpgrades()};$('permaOptions').appendChild(b)})}
+function update(dt){if(state!=='playing')return;elapsed+=dt;player.invuln=Math.max(0,player.invuln-dt);
+let mx=(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.a?1:0)+joystick.x,my=(keys.ArrowDown||keys.s?1:0)-(keys.ArrowUp||keys.w?1:0)+joystick.y;let len=Math.hypot(mx,my);if(len>1){mx/=len;my/=len}player.x=clamp(player.x+mx*player.speed*dt,player.r,W-player.r);player.y=clamp(player.y+my*player.speed*dt,player.r+10,H-player.r);
+spawnTimer-=dt;if(spawnTimer<=0){if(elapsed>65&&!bossSpawned){spawnEnemy('boss');bossSpawned=true;$('zone').textContent='BOSS · GARDIEN DE L’ABÎME'}else{let r=Math.random();spawnEnemy(r<.18?'brute':r<.42?'spectre':'rampant')}spawnTimer=Math.max(.28,1.1-elapsed*.008)}
+player.attackCd-=dt;if(player.attackCd<=0&&enemies.length){let e=nearest();if(e){fireAt(e);player.attackCd=player.attackRate}}
+if(player.nova){player.novaCd-=dt;if(player.novaCd<=0){player.novaCd=7;burst(player.x,player.y,COLORS.pink,28);for(const e of [...enemies])if(dist(e,player)<125){e.hp-=player.damage*1.8;if(e.hp<=0)killEnemy(e)}}}
+for(const e of [...enemies]){let dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy)||1;if(d>e.r+player.r*.6){e.x+=dx/d*e.speed*dt;e.y+=dy/d*e.speed*dt}if(player.aura&&d<54)e.hp-=player.damage*.55*dt;if(d<e.r+player.r&&player.invuln<=0){player.hp-=e.damage;player.invuln=.7;burst(player.x,player.y,COLORS.pink,7);if(player.hp<=0){player.hp=0;endRun(false,'Ta forme cybernétique s’est désagrégée. Chaque tentative te rendra plus forte.');break}}if(e.type==='boss'){e.attack-=dt;if(e.attack<=0){e.attack=2.1;for(let i=0;i<8;i++){let a=i*Math.PI/4;enemyBullets.push({x:e.x,y:e.y,vx:Math.cos(a)*125,vy:Math.sin(a)*125,r:5,damage:11,life:2.4})}}}}
+for(const b of [...bullets]){b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;let hit=null;for(const e of enemies)if(dist(b,e)<b.r+e.r){hit=e;break}if(hit){hit.hp-=b.damage;burst(b.x,b.y,COLORS.cyan,3);bullets.splice(bullets.indexOf(b),1);if(hit.hp<=0)killEnemy(hit)}else if(b.life<=0||b.x<-30||b.x>W+30||b.y<-30||b.y>H+30)bullets.splice(bullets.indexOf(b),1)}
+for(const b of [...enemyBullets]){b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;if(dist(b,player)<b.r+player.r&&player.invuln<=0){player.hp-=b.damage;player.invuln=.6;enemyBullets.splice(enemyBullets.indexOf(b),1);if(player.hp<=0){player.hp=0;endRun(false,'Le Gardien a brisé ta défense. Reviens mieux préparée.');break}}else if(b.life<=0)enemyBullets.splice(enemyBullets.indexOf(b),1)}
+for(const g of [...gems]){let d=dist(g,player);if(d<105){g.x+=(player.x-g.x)/Math.max(d,1)*230*dt;g.y+=(player.y-g.y)/Math.max(d,1)*230*dt}if(d<player.r+g.r+3){player.xp+=g.xp*player.xpBonus;gems.splice(gems.indexOf(g),1);burst(g.x,g.y,COLORS.cyan,4);if(player.xp>=player.xpNeed){levelUp();break}}}
+for(const p of [...particles]){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(p.life<=0)particles.splice(particles.indexOf(p),1)}
+if(state==='playing'&&elapsed>180&&!bossSpawned){spawnEnemy('boss');bossSpawned=true}
+updateHud()}
+function updateHud(){$('hptext').textContent=Math.ceil(player.hp)+' / '+player.maxHp;$('hpfill').style.width=(player.hp/player.maxHp*100)+'%';$('xpfill').style.width=(player.xp/player.xpNeed*100)+'%';$('lvtext').textContent=player.level;$('soultext').textContent=saved.souls}
+function draw(){ctx.clearRect(0,0,W,H);ctx.fillStyle=COLORS.bg;ctx.fillRect(0,0,W,H);
+// floor grid and arcane glyphs
+let t=performance.now()*.0002;ctx.strokeStyle='#30243e';ctx.lineWidth=1;let spacing=42;for(let x=(W/2%spacing);x<W;x+=spacing){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=(H/2%spacing);y<H;y+=spacing){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+for(let i=0;i<7;i++){let x=(i*173+47)%W,y=(i*211+73)%H;ctx.strokeStyle='#7d36ff22';ctx.beginPath();ctx.arc(x,y,18+Math.sin(t*5+i)*3,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(x-7,y);ctx.lineTo(x+7,y);ctx.moveTo(x,y-7);ctx.lineTo(x,y+7);ctx.stroke()}
+if(player){for(const g of gems){ctx.shadowBlur=13;ctx.shadowColor=COLORS.cyan;ctx.fillStyle=COLORS.cyan;ctx.beginPath();ctx.moveTo(g.x,g.y-g.r);ctx.lineTo(g.x+g.r,g.y);ctx.lineTo(g.x,g.y+g.r);ctx.lineTo(g.x-g.r,g.y);ctx.closePath();ctx.fill();ctx.shadowBlur=0}
+for(const b of bullets){ctx.shadowBlur=12;ctx.shadowColor=COLORS.cyan;ctx.fillStyle=COLORS.cyan;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0}
+for(const b of enemyBullets){ctx.shadowBlur=10;ctx.shadowColor=COLORS.pink;ctx.fillStyle=COLORS.pink;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0}
+for(const e of enemies){ctx.save();ctx.translate(e.x,e.y);ctx.shadowBlur=e.type==='boss'?24:12;ctx.shadowColor=e.type==='boss'?COLORS.pink:COLORS.purple;ctx.fillStyle=e.type==='boss'?'#5b163f':e.type==='brute'?'#3b2a55':e.type==='spectre'?'#17434c':'#302043';ctx.strokeStyle=e.type==='boss'?COLORS.pink:e.type==='spectre'?COLORS.cyan:COLORS.purple;ctx.lineWidth=e.type==='boss'?3:2;ctx.beginPath();if(e.type==='boss'){for(let i=0;i<8;i++){let a=i*Math.PI/4;let r=i%2?e.r*.78:e.r*1.12;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath()}else ctx.arc(0,0,e.r,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle=COLORS.cyan;ctx.fillRect(-e.r*.45,-3, e.r*.25,4);ctx.fillRect(e.r*.2,-3,e.r*.25,4);if(e.type==='boss'||e.hp<e.maxHp){ctx.fillStyle='#16131e';ctx.fillRect(-e.r,-e.r-10,e.r*2,4);ctx.fillStyle=COLORS.pink;ctx.fillRect(-e.r,-e.r-10,e.r*2*e.hp/e.maxHp,4)}ctx.restore()}
+if(player.ghost){let a=performance.now()*.002;ctx.fillStyle=COLORS.cyan;ctx.shadowBlur=12;ctx.shadowColor=COLORS.cyan;ctx.beginPath();ctx.arc(player.x+Math.cos(a)*26,player.y+Math.sin(a)*26,5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0}
+if(player.aura){ctx.strokeStyle='#ff3fba55';ctx.lineWidth=2;ctx.beginPath();ctx.arc(player.x,player.y,54,0,Math.PI*2);ctx.stroke()}
+if(player.nova){ctx.strokeStyle='#ff3fba33';ctx.beginPath();ctx.arc(player.x,player.y,125,0,Math.PI*2);ctx.stroke()}
+ctx.save();ctx.translate(player.x,player.y);ctx.shadowBlur=player.invuln?25:18;ctx.shadowColor=player.invuln?COLORS.pink:COLORS.purple;ctx.fillStyle='#171421';ctx.strokeStyle=COLORS.purple;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(-12,9);ctx.lineTo(-10,-8);ctx.lineTo(0,-17);ctx.lineTo(11,-8);ctx.lineTo(13,9);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle=COLORS.pink;ctx.fillRect(-7,-5,4,3);ctx.fillStyle=COLORS.cyan;ctx.fillRect(3,-5,4,3);ctx.strokeStyle='#45f3e899';ctx.beginPath();ctx.moveTo(0,10);ctx.lineTo(0,15);ctx.stroke();ctx.restore();
+for(const p of particles){ctx.globalAlpha=clamp(p.life/p.max,0,1);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1}
+}
+if(state==='playing'&&elapsed<3){ctx.fillStyle='#ffffffcc';ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.fillText('SURVIS. ÉVOLUE. DÉTRUIS LE GARDIEN.',W/2,H*.25)}
+}
+function loop(now){let dt=Math.min(.033,(now-last)/1000||0);last=now;if(state==='playing')update(dt);draw();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+addEventListener('keydown',e=>{keys[e.key]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.key==='Escape'){if(state==='playing'){state='paused';show('pause')}else if(state==='paused'){state='playing';$('pause').classList.add('hidden');last=performance.now()}}});
+addEventListener('keyup',e=>keys[e.key]=false);
+const joy=$('joystick'),stick=$('stick');
+function joyMove(e){let r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=34,l=Math.hypot(dx,dy);if(l>max){dx=dx/l*max;dy=dy/l*max}joystick.x=dx/max;joystick.y=dy/max;stick.style.left=(34+dx)+'px';stick.style.top=(34+dy)+'px'}
+joy.addEventListener('pointerdown',e=>{e.preventDefault();pointerId=e.pointerId;joy.setPointerCapture(pointerId);joystick.active=true;joyMove(e)});
+joy.addEventListener('pointermove',e=>{if(joystick.active&&e.pointerId===pointerId)joyMove(e)});
+function joyEnd(){joystick.active=false;joystick.x=joystick.y=0;stick.style.left='34px';stick.style.top='34px';pointerId=null}
+joy.addEventListener('pointerup',joyEnd);joy.addEventListener('pointercancel',joyEnd);
+$('startBtn').onclick=startRun;$('upgradeBtn').onclick=()=>openUpgrades();$('closeUpgrade').onclick=()=>{$('upgradePanel').classList.add('hidden');if(state==='upgrade')state='menu';show('start')};$('againBtn').onclick=startRun;$('endUpgradeBtn').onclick=()=>{ $('end').classList.add('hidden');openUpgrades()};$('resumeBtn').onclick=()=>{state='playing';$('pause').classList.add('hidden');last=performance.now()};$('quitBtn').onclick=()=>{state='menu';hideOverlays();show('start')};
+$('soultext').textContent=saved.souls;$('startSouls').textContent=saved.souls;
+})();
+</script>
+</body>
+</html>
